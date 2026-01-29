@@ -1,0 +1,305 @@
+# Sumo Logic & AWS Auto-Remediation System
+
+## Overview
+Automated monitoring and remediation system that:
+1. **Monitors** API endpoint performance using Sumo Logic
+2. **Detects** when response times exceed thresholds (>3 seconds)
+3. **Auto-remediates** by restarting EC2 instances
+4. **Notifies** administrators via email
+
+## Project Structure
+```
+sumo-aws-project/
+├── lambda_function/
+│   └── lambda_function.py          # Lambda code for EC2 restart
+├── terraform/
+│   ├── main.tf                      # Main infrastructure config
+│   ├── variables.tf                 # Input variables
+│   └── outputs.tf                   # Output values
+├── sumo_logic_query.txt             # Sumo Logic configuration
+└── README.md                        # This file
+```
+
+## Components
+
+### Part 1: Sumo Logic Monitoring
+- **Query:** Monitors API logs for `/api/data` endpoint
+- **Threshold:** Response time > 3 seconds
+- **Alert:** Triggers when >5 slow requests in 10 minutes
+- **Action:** Sends webhook to Lambda Function URL
+
+### Part 2: AWS Lambda Function
+- **Language:** Python 3.11
+- **Trigger:** HTTP request from Sumo Logic webhook
+- **Actions:**
+  1. Receives alert from Sumo Logic
+  2. Checks EC2 instance state
+  3. Restarts instance if running
+  4. Sends SNS notification with status
+
+### Part 3: Terraform Infrastructure as Code
+**Resources Deployed:**
+- EC2 instance (t3.micro - Free Tier)
+- SNS topic for notifications
+- Lambda function with Function URL
+- IAM role and policy (least privilege)
+
+**Security Features:**
+- Least privilege IAM policies
+- Resource-specific permissions
+- No wildcard permissions except read-only operations
+- All resources tagged with "ManagedBy: Terraform"
+
+## Video Demonstrations
+- **Part 1:** [Sumo Logic Query Setup](VIDEO_LINK_1)
+- **Part 2:** [AWS Lambda Function](VIDEO_LINK_2)
+- **Part 3:** [Terraform Infrastructure](VIDEO_LINK_3)
+
+## Deployment Instructions
+
+### Prerequisites
+- AWS Account (free tier eligible)
+- Sumo Logic Account (free trial)
+- Terraform installed (>= 1.0)
+- AWS CLI configured
+
+### Step 1: Deploy Infrastructure
+```bash
+cd terraform
+terraform init
+terraform plan
+terraform apply
+```
+
+Save the outputs:
+- `ec2_instance_id` - EC2 instance to restart
+- `lambda_function_url` - Use in Sumo Logic webhook
+- `sns_topic_arn` - SNS notification topic
+
+### Step 2: Configure Sumo Logic
+1. Create HTTP source:
+   - Name: `demo-http-source`
+   - Source Category: `demo/logs`
+2. Create monitor using query from `sumo_logic_query.txt`
+3. Add webhook notification with Lambda Function URL
+
+### Step 3: Subscribe to Notifications
+1. Go to AWS SNS Console (us-east-1 region)
+2. Find topic: `ec2-restart-alerts-terraform`
+3. Create email subscription
+4. Confirm subscription via email
+
+### Step 4: Test the System
+```bash
+curl -X POST "YOUR_LAMBDA_URL" \
+  -H "Content-Type: application/json" \
+  -d '{"test":"manual"}'
+```
+
+Expected results:
+- Email notification received
+- EC2 instance reboots
+- CloudWatch logs show execution
+
+## Security - Least Privilege Implementation
+
+### IAM Policy Design
+✅ Lambda can **only restart** the specific EC2 instance created by Terraform  
+✅ Lambda can **only publish** to the specific SNS topic  
+✅ IAM policies scoped to exact ARNs (not wildcards)  
+✅ Read-only operations (DescribeInstances) use wildcards safely  
+✅ CloudWatch logs scoped to specific Lambda function
+
+### Policy Statements
+1. **EC2RestartSpecificInstance** - RebootInstances action scoped to exact instance ARN
+2. **EC2DescribeAll** - Read-only describe operation (safe wildcard)
+3. **SNSPublishSpecificTopic** - Publish action scoped to exact topic ARN
+4. **CloudWatchLogs** - Logging scoped to Lambda function log group
+
+This implementation follows AWS security best practices and prevents:
+- Accidental termination of other instances
+- Lateral movement if Lambda is compromised
+- Compliance violations from excessive permissions
+
+## Architecture Diagram
+```
+Sumo Logic Monitor → Webhook → Lambda Function URL
+                                       ↓
+                                 Check EC2 State
+                                       ↓
+                                 Restart Instance
+                                       ↓
+                                 Send SNS Alert → Email
+```
+
+## Cost Estimate
+- **EC2:** $0 (t3.micro free tier - 750 hours/month)
+- **Lambda:** $0 (1M requests/month free)
+- **SNS:** $0 (1,000 notifications/month free)
+- **Sumo Logic:** $0 (free trial)
+
+**Total:** $0 for first year with AWS free tier
+
+## Cleanup
+To destroy all resources:
+```bash
+cd terraform
+terraform destroy
+```
+
+Type `yes` when prompted.
+
+## Troubleshooting
+
+### Lambda not triggering
+- Check Sumo Logic webhook URL matches Lambda Function URL
+- Verify Function URL authentication is set to NONE
+- Check CloudWatch logs for Lambda execution errors
+
+### EC2 not restarting
+- Verify IAM permissions allow RebootInstances
+- Check instance is in "running" state before restart
+- Review CloudWatch logs for error messages
+
+### No email notifications
+- Confirm SNS subscription status is "Confirmed"
+- Verify SNS topic ARN in Lambda environment variables
+- Check spam/junk folder for emails
+
+## Technologies Used
+- **Monitoring:** Sumo Logic
+- **Compute:** AWS Lambda (Python 3.11)
+- **Infrastructure:** AWS EC2, SNS
+- **IaC:** Terraform
+- **Security:** AWS IAM (least privilege)
+
+## Author
+[Your Name]
+
+## License
+MIT License
+```
+
+**Save the file:**
+1. Click **File → Save As**
+2. Navigate to: `C:\sumo-aws-project`
+3. **File name:** `README.md`
+4. **Save as type:** Click dropdown → Select **"All Files (*.*)"**
+5. Click **Save**
+6. **Close Notepad**
+
+---
+
+### 1.2 - Create .gitignore
+
+**Open Notepad again:**
+- Press **Windows key**
+- Type: `notepad`
+- Press **Enter**
+
+**Copy this and paste:**
+```
+# Terraform
+*.tfstate
+*.tfstate.*
+*.tfstate.backup
+.terraform/
+*.tfvars
+.terraform.lock.hcl
+terraform.tfplan
+
+# Lambda
+lambda_deployment.zip
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyc
+.Python
+
+# AWS
+*.pem
+*.cer
+aws-keys.txt
+
+# Personal
+terraform-outputs.txt
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db
+```
+
+**Save the file:**
+1. Click **File → Save As**
+2. Navigate to: `C:\sumo-aws-project`
+3. **File name:** `.gitignore` (with the dot at the beginning)
+4. **Save as type:** Select **"All Files (*.*)"**
+5. Click **Save**
+6. **Close Notepad**
+
+---
+
+### 1.3 - Create sumo_logic_query.txt
+
+**Open Notepad again**
+
+**Copy this and paste:**
+```
+Sumo Logic Configuration
+=========================
+
+HTTP Source Configuration:
+--------------------------
+Name: demo-http-source
+Description: HTTP source for collecting API performance logs
+Source Category: demo/logs
+Fields: environment=production
+
+Query for Monitoring:
+---------------------
+_sourceCategory=demo/logs
+| json field=_raw "response_time", "url", "method", "status"
+| where url="/api/data"
+| where response_time > 3000
+| count as slow_requests
+
+Monitor Configuration:
+----------------------
+Name: High API Response Time Alert
+Description: Alerts when /api/data endpoint exceeds 3 seconds more than 5 times
+
+Trigger Conditions:
+- Alert Type: Critical
+- Condition: slow_requests > 5
+- Time Window: 10 minutes
+- Evaluation Frequency: Every 10 minutes
+
+Notification:
+- Type: Webhook
+- Connection: Lambda-Restart-Webhook
+- URL: Lambda Function URL from Terraform output
+
+Alert Logic:
+------------
+1. Query runs every 10 minutes
+2. Looks for /api/data requests with response_time > 3000ms
+3. Counts total slow requests
+4. If count exceeds 5, triggers webhook to Lambda
+5. Lambda restarts EC2 instance and sends SNS notification
+
+Test Data Example:
+------------------
+{
+  "timestamp": "2026-01-29T10:00:00Z",
+  "method": "GET",
+  "url": "/api/data",
+  "status": 200,
+  "response_time": 4500,
+  "client_ip": "192.168.1.100"
+}
