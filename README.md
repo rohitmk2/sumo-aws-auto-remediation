@@ -66,11 +66,11 @@ sumo-aws-project/
 
 
 
-\- \*\*Part 1:\*\* \[Sumo Logic Query Setup](VIDEO\_LINK\_1)
+\- \*\*Part 1:\*\* \[Sumo Logic Query Setup](https://drive.google.com/file/d/1SETavWo2HCQJasL2xcEpJKUyQ6DMyp5x/view?usp=sharing)
 
-\- \*\*Part 2:\*\* \[AWS Lambda Function](VIDEO\_LINK\_2)
+\- \*\*Part 2:\*\* \[AWS Lambda Function](https://drive.google.com/file/d/1rO-nqhuBrpk936daZMoaTDvLFrNE5DgC/view?usp=sharing)
 
-\- \*\*Part 3:\*\* \[Terraform Infrastructure](VIDEO\_LINK\_3)
+\- \*\*Part 3:\*\* \[Terraform Infrastructure](https://drive.google.com/file/d/1jiF7r1f-OHNFhmIp2u1q4iu-YT0aVj1J/view?usp=sharing)
 
 
 
